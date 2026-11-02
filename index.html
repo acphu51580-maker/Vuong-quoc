@@ -2,14 +2,27 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Cube Runner 3D</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="hud">
-    <p>WASD để di chuyển • SPACE để nhảy • Chuột để xoay camera</p>
+    <p>WASD / nút cảm ứng để di chuyển • SPACE / nút ⬆ để nhảy • Kéo màn hình để xoay camera</p>
   </div>
+
+  <!-- Nút điều khiển cảm ứng -->
+  <div id="joystick-zone">
+    <button class="touch-btn" id="btn-up">▲</button>
+    <div class="row">
+      <button class="touch-btn" id="btn-left">◀</button>
+      <button class="touch-btn" id="btn-down">▼</button>
+      <button class="touch-btn" id="btn-right">▶</button>
+    </div>
+  </div>
+
+  <button class="touch-btn jump-btn" id="btn-jump">⬆ NHẢY</button>
+
   <script type="importmap">
   {
     "imports": {
