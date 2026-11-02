@@ -3,35 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Anime Top-Down RPG</title>
+    <title>Taming.io Clone - Sinh Tồn</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #222; touch-action: none; }
-        canvas { display: block; background: #4a7c59; /* Màu cỏ */ }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
+        canvas { display: block; background: #4a7c59; }
         
-        /* UI Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
         
-        /* Góc trái trên: Thông tin nhân vật */
+        /* Bảng thông tin góc trái */
         #player-info {
-            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7);
-            padding: 10px; border-radius: 8px; border: 2px solid #fff; color: white; width: 200px;
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6);
+            padding: 10px; border-radius: 8px; border: 2px solid #fff; color: white; width: 180px;
+            font-size: 14px;
         }
-        .name-lv { font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
+        .name-lv { font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; margin-bottom: 5px;}
         .bar-bg { background: #333; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
         .bar-hp { background: #ff3333; height: 100%; width: 100%; transition: width 0.2s; }
-        .bar-star { background: #ffd700; height: 100%; width: 50%; transition: width 0.2s; }
-        .star-text { font-size: 10px; text-align: center; margin-top: 2px; color: #ffd700; }
+        .bar-xp { background: #00ccff; height: 100%; width: 0%; transition: width 0.2s; }
+        .res-text { margin-top: 8px; font-size: 12px; color: #ddd; display: flex; flex-direction: column; gap: 3px;}
+        .res-text span { color: #fff; font-weight: bold; }
 
-        /* Nút điều khiển cảm ứng */
+        /* Joystick */
         #joystick-zone { position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px; pointer-events: auto; }
         #joystick-base { width: 100%; height: 100%; background: rgba(255,255,255,0.2); border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); position: relative;}
-        #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.6); border-radius: 50%; position: absolute; top: 35px; left: 35px; }
+        #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; position: absolute; top: 35px; left: 35px; }
 
-        #action-buttons { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
-        .btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255, 50, 50, 0.6); border: 2px solid #fff; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; }
-        .btn:active { transform: scale(0.9); background: rgba(255, 50, 50, 0.9); }
-        .btn-shop { background: rgba(50, 150, 255, 0.6); width: 50px; height: 50px; font-size: 12px; }
+        /* Nút bấm */
+        #action-buttons { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; align-items: flex-end;}
+        .btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255, 50, 50, 0.7); border: 2px solid #fff; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; text-align: center;}
+        .btn:active { transform: scale(0.9); background: rgba(255, 50, 50, 1); }
+        .btn-small { width: 60px; height: 60px; background: rgba(50, 150, 255, 0.7); font-size: 12px;}
+        .btn-small:active { background: rgba(50, 150, 255, 1); }
 
         /* Sảnh chờ (Login) */
         #login-screen {
@@ -39,208 +42,180 @@
             background: linear-gradient(135deg, #1e3c72, #2a5298); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
         }
         .login-box { background: rgba(0,0,0,0.5); padding: 30px; border-radius: 15px; border: 1px solid #ffd700; text-align: center; width: 80%; max-width: 400px; }
-        .login-box h1 { margin-bottom: 20px; color: #ffd700; text-shadow: 0 0 10px #ffd700; }
-        input { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none; font-size: 16px; }
+        .login-box h1 { margin-bottom: 20px; color: #ffd700; }
+        input { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none; font-size: 16px; text-align: center;}
         .btn-login { width: 100%; padding: 15px; background: #ffd700; color: #000; border: none; border-radius: 5px; font-weight: bold; font-size: 18px; cursor: pointer; }
-
-        /* Bảng Menu (Tiệm, Túi đồ) */
-        #modal-menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(20, 20, 20, 0.95); border: 2px solid #ffd700; border-radius: 10px;
-            width: 90%; max-width: 500px; color: white; display: none; pointer-events: auto; padding: 20px; flex-direction: column;
-        }
-        .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid #555; padding-bottom: 10px; margin-bottom: 10px; }
-        .close-btn { color: red; font-weight: bold; cursor: pointer; background: none; border: none; font-size: 20px; }
-        .modal-content { max-height: 300px; overflow-y: auto; }
-        .item-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #333; }
-        .item-btn { background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Sảnh Chờ / Đăng Nhập -->
     <div id="login-screen">
         <div class="login-box">
-            <h1>VƯƠNG QUỐC ANIME</h1>
-            <input type="text" id="username" placeholder="Nhập tên nhân vật..." value="AnhHung">
-            <button class="btn-login" onclick="startGame()">ĐĂNG NHẬP / CHƠI NGAY</button>
-            <p style="margin-top: 15px; font-size: 12px; color: #aaa;">Hệ thống tự động lưu tiến trình trên thiết bị này.</p>
+            <h1>TAMING.IO CLONE</h1>
+            <input type="text" id="username" placeholder="Nhập tên của bạn..." value="Thợ Săn">
+            <button class="btn-login" onclick="startGame()">BẮT ĐẦU SINH TỒN</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #aaa;">Chặt cây, đập đá, thuần hóa thú!</p>
         </div>
     </div>
 
-    <!-- Game UI -->
     <div id="ui-layer">
         <div id="player-info">
             <div class="name-lv"><span id="ui-name">Tên</span> <span>Lv.<span id="ui-lv">1</span></span></div>
             <div class="bar-bg"><div class="bar-hp" id="ui-hp-bar"></div></div>
-            <div class="bar-bg"><div class="bar-star" id="ui-star-bar"></div></div>
-            <div class="star-text"><span id="ui-star">0</span> / <span id="ui-star-max">100</span> Sao</div>
+            <div class="bar-bg"><div class="bar-xp" id="ui-xp-bar"></div></div>
+            <div class="res-text">
+                <div>🪵 Gỗ: <span id="ui-wood">0</span></div>
+                <div>🪨 Đá: <span id="ui-stone">0</span></div>
+                <div>🪙 Vàng: <span id="ui-gold">0</span></div>
+            </div>
         </div>
 
-        <!-- Joystick -->
         <div id="joystick-zone">
             <div id="joystick-base"><div id="joystick-stick"></div></div>
         </div>
 
-        <!-- Nút bấm -->
         <div id="action-buttons">
-            <button class="btn btn-shop" onclick="openShop('potion')">Thuốc</button>
-            <button class="btn btn-shop" onclick="openShop('weapon')">Vũ Khí</button>
-            <button class="btn btn-shop" onclick="openShop('armor')">Giáp</button>
+            <button class="btn btn-small" onclick="tamePet()">Thuần Hóa</button>
+            <button class="btn btn-small" onclick="buildWall()">Xây Nhà</button>
             <button class="btn" onclick="attack()">CHÉM</button>
-        </div>
-
-        <!-- Bảng Menu -->
-        <div id="modal-menu">
-            <div class="modal-header">
-                <h2 id="modal-title">Cửa Hàng</h2>
-                <button class="close-btn" onclick="closeModal()">X</button>
-            </div>
-            <div class="modal-content" id="modal-body">
-                <!-- Nội dung shop đổ vào đây -->
-            </div>
         </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // ==========================================
-        // 1. HỆ THỐNG DỮ LIỆU & LƯU TRỮ
-        // ==========================================
-        let playerData = {
-            name: "AnhHung",
-            level: 1,
-            stars: 0,
-            starsMax: 100,
-            hp: 100,
-            maxHp: 100,
-            gold: 500,
-            diamond: 100,
-            x: 0, y: 0, // Tọa độ
-            inCity: true, // Đang ở trong thành phố hay map ngoài
-            inventory: {
-                weapons: ["Kiếm Gỗ", "Đoản Kiếm", "Trường Kiếm"],
-                armors: ["Giáp Gỗ"],
-                potions: ["Bình Máu Nhỏ"]
-            }
-        };
-
-        // Lưu game tự động
-        function saveGame() {
-            localStorage.setItem('animeRPG_Save', JSON.stringify(playerData));
-        }
-
-        // Load game khi mở
-        function loadGame() {
-            let saved = localStorage.getItem('animeRPG_Save');
-            if (saved) {
-                playerData = JSON.parse(saved);
-                document.getElementById('username').value = playerData.name;
-            }
-        }
-
-        // ==========================================
-        // 2. KHỞI TẠO CANVAS & GAME LOOP
-        // ==========================================
+        // --- CẤU HÌNH ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let width, height;
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
 
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // Biến điều khiển
+        let player = { name: "Hunter", x: 0, y: 0, hp: 100, maxHp: 100, wood: 0, stone: 0, gold: 0, level: 1, xp: 0, xpMax: 20 };
         let joystick = { active: false, dx: 0, dy: 0 };
-        let isAttacking = false;
-        let attackTimer = 0;
-        let facing = { x: 0, y: 1 }; // Hướng nhìn mặc định (xuống dưới)
+        let facing = { x: 0, y: 1 };
+        let attackCooldown = 0;
 
-        // Bắt đầu game
+        // --- THẾ GIỚI ---
+        let trees = [];
+        let rocks = [];
+        let animals = [];
+        let walls = [];
+        let slashes = [];
+
+        // --- KHỞI TẠO THẾ GIỚI ---
+        function initWorld() {
+            trees = []; rocks = []; animals = []; walls = [];
+            for (let i = 0; i < 30; i++) trees.push({ x: (Math.random() - 0.5) * 2000, y: (Math.random() - 0.5) * 2000, radius: 25, hp: 3 });
+            for (let i = 0; i < 20; i++) rocks.push({ x: (Math.random() - 0.5) * 2000, y: (Math.random() - 0.5) * 2000, radius: 20, hp: 5 });
+            for (let i = 0; i < 10; i++) animals.push({ 
+                x: (Math.random() - 0.5) * 1000, y: (Math.random() - 0.5) * 1000, 
+                radius: 15, type: ['Sói', 'Gấu', 'Thỏ'][Math.floor(Math.random()*3)], 
+                tamed: false, hp: 50, maxHp: 50, color: '#8B4513'
+            });
+        }
+
         function startGame() {
-            let inputName = document.getElementById('username').value.trim();
-            if (inputName === "") inputName = "Vô Danh";
-            playerData.name = inputName;
-            
+            player.name = document.getElementById('username').value || "Hunter";
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('ui-layer').style.display = 'block';
-            
+            initWorld();
             updateUI();
-            saveGame();
             gameLoop();
         }
 
-        // ==========================================
-        // 3. XỬ LÝ ĐIỀU KHIỂN (JOYSTICK & NÚT)
-        // ==========================================
+        // --- ĐIỀU KHIỂN JOYSTICK ---
         const joyZone = document.getElementById('joystick-zone');
         const joyStick = document.getElementById('joystick-stick');
         const joyBase = document.getElementById('joystick-base');
 
-        joyZone.addEventListener('touchstart', handleJoyStart);
-        joyZone.addEventListener('touchmove', handleJoyMove);
-        joyZone.addEventListener('touchend', handleJoyEnd);
-        // Hỗ trợ chuột để test trên máy tính
-        joyZone.addEventListener('mousedown', handleJoyStart);
-        window.addEventListener('mousemove', handleJoyMove);
-        window.addEventListener('mouseup', handleJoyEnd);
-
-        function handleJoyStart(e) {
-            e.preventDefault();
-            joystick.active = true;
-        }
-
-        function handleJoyMove(e) {
+        joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joystick.active = true; });
+        joyZone.addEventListener('touchmove', (e) => {
             if (!joystick.active) return;
             e.preventDefault();
-            let touch = e.touches ? e.touches[0] : e;
+            let touch = e.touches[0];
             let rect = joyBase.getBoundingClientRect();
-            let centerX = rect.left + rect.width / 2;
-            let centerY = rect.top + rect.height / 2;
-            
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
-            let distance = Math.sqrt(dx*dx + dy*dy);
-            let maxDist = rect.width / 2;
-
-            if (distance > maxDist) {
-                dx = (dx / distance) * maxDist;
-                dy = (dy / distance) * maxDist;
-            }
-
+            let dx = touch.clientX - (rect.left + rect.width/2);
+            let dy = touch.clientY - (rect.top + rect.height/2);
+            let dist = Math.hypot(dx, dy);
+            let max = rect.width / 2;
+            if (dist > max) { dx = (dx/dist)*max; dy = (dy/dist)*max; }
             joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
-            
-            // Chuẩn hóa vector
-            joystick.dx = dx / maxDist;
-            joystick.dy = dy / maxDist;
-        }
+            joystick.dx = dx / max; joystick.dy = dy / max;
+        });
+        joyZone.addEventListener('touchend', () => { joystick.active = false; joystick.dx = 0; joystick.dy = 0; joyStick.style.transform = `translate(0,0)`; });
+        
+        // Hỗ trợ chuột cho PC
+        joyZone.addEventListener('mousedown', () => joystick.active = true);
+        window.addEventListener('mousemove', (e) => {
+            if (!joystick.active) return;
+            let rect = joyBase.getBoundingClientRect();
+            let dx = e.clientX - (rect.left + rect.width/2);
+            let dy = e.clientY - (rect.top + rect.height/2);
+            let dist = Math.hypot(dx, dy);
+            let max = rect.width / 2;
+            if (dist > max) { dx = (dx/dist)*max; dy = (dy/dist)*max; }
+            joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+            joystick.dx = dx / max; joystick.dy = dy / max;
+        });
+        window.addEventListener('mouseup', () => { joystick.active = false; joystick.dx = 0; joystick.dy = 0; joyStick.style.transform = `translate(0,0)`; });
 
-        function handleJoyEnd(e) {
-            joystick.active = false;
-            joystick.dx = 0;
-            joystick.dy = 0;
-            joyStick.style.transform = `translate(0px, 0px)`;
-        }
-
-        // Hàm chém
+        // --- HÀNH ĐỘNG ---
         function attack() {
-            if (!isAttacking) {
-                isAttacking = true;
-                attackTimer = 15; // 15 frame hiệu ứng chém
-                checkHit();
+            if (attackCooldown > 0) return;
+            attackCooldown = 15;
+            slashes.push({ x: player.x + facing.x * 40, y: player.y + facing.y * 40, life: 10 });
+
+            // Chém cây
+            trees.forEach((t, i) => {
+                if (Math.hypot(player.x - t.x, player.y - t.y) < 60) {
+                    t.hp--; if (t.hp <= 0) { player.wood += 5; trees.splice(i, 1); addXP(2); }
+                }
+            });
+            // Chém đá
+            rocks.forEach((r, i) => {
+                if (Math.hypot(player.x - r.x, player.y - r.y) < 60) {
+                    r.hp--; if (r.hp <= 0) { player.stone += 5; rocks.splice(i, 1); addXP(3); }
+                }
+            });
+            // Chém quái
+            animals.forEach(a => {
+                if (!a.tamed && Math.hypot(player.x - a.x, player.y - a.y) < 60) {
+                    a.hp -= 20; if (a.hp <= 0) { player.gold += 10; addXP(5); a.x = 9999; a.y = 9999; } // Biến mất
+                }
+            });
+            updateUI();
+        }
+
+        function tamePet() {
+            animals.forEach(a => {
+                if (!a.tamed && Math.hypot(player.x - a.x, player.y - a.y) < 100) {
+                    a.tamed = true;
+                    a.name = "Pet " + a.type;
+                    a.color = '#00ccff'; // Đổi màu khi thuần hóa
+                }
+            });
+        }
+
+        function buildWall() {
+            if (player.wood >= 10 && player.stone >= 5) {
+                player.wood -= 10; player.stone -= 5;
+                walls.push({ x: player.x + facing.x * 50, y: player.y + facing.y * 50, radius: 30 });
+                updateUI();
+            } else {
+                alert("Cần 10 Gỗ và 5 Đá để xây!");
             }
         }
 
-        // ==========================================
-        // 4. LOGIC GAME & VẼ (DRAW)
-        // ==========================================
-        let enemy = { x: 150, y: 150, hp: 50, maxHp: 50, name: "Quái Nhỏ", color: "#ff5555" };
-        let boss = { x: -200, y: -200, hp: 500, maxHp: 500, name: "Rồng Lửa", color: "#ff0000", active: false };
-        
+        function addXP(amount) {
+            player.xp += amount;
+            if (player.xp >= player.xpMax) {
+                player.level++; player.xp -= player.xpMax; player.xpMax = Math.floor(player.xpMax * 1.5);
+                player.maxHp += 20; player.hp = player.maxHp;
+            }
+        }
+
+        // --- VÒNG LẶP GAME ---
         function gameLoop() {
             update();
             draw();
@@ -248,227 +223,96 @@
         }
 
         function update() {
+            if (attackCooldown > 0) attackCooldown--;
+
             // Di chuyển
-            if (joystick.active && (joystick.dx !== 0 || joystick.dy !== 0)) {
-                let speed = 4;
-                playerData.x += joystick.dx * speed;
-                playerData.y += joystick.dy * speed;
-                
-                // Cập nhật hướng nhìn
-                facing.x = joystick.dx;
-                facing.y = joystick.dy;
+            if (joystick.active) {
+                player.x += joystick.dx * 6;
+                player.y += joystick.dy * 6;
+                facing.x = joystick.dx; facing.y = joystick.dy;
             }
 
-            // Cập nhật attack timer
-            if (isAttacking) {
-                attackTimer--;
-                if (attackTimer <= 0) isAttacking = false;
-            }
-
-            // Cập nhật UI nếu máu thay đổi
-            updateUI();
-        }
-
-        function checkHit() {
-            // Kiểm tra khoảng cách tới quái
-            let dist = Math.hypot(playerData.x - enemy.x, playerData.y - enemy.y);
-            if (dist < 80) {
-                enemy.hp -= 20; // Đánh mất 20 máu
-                if (enemy.hp <= 0) {
-                    enemy.hp = enemy.maxHp;
-                    playerData.gold += 50;
-                    playerData.stars += 15;
-                    checkLevelUp();
-                    saveGame();
+            // Thú cưng đi theo
+            animals.forEach(a => {
+                if (a.tamed) {
+                    let dx = player.x - a.x; let dy = player.y - a.y;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist > 60) { a.x += (dx/dist)*5; a.y += (dy/dist)*5; }
+                } else {
+                    // Thú hoang đi lòng vòng
+                    a.x += (Math.random() - 0.5) * 2;
+                    a.y += (Math.random() - 0.5) * 2;
                 }
-            }
-        }
+            });
 
-        function checkLevelUp() {
-            if (playerData.stars >= playerData.starsMax) {
-                playerData.level++;
-                playerData.stars -= playerData.starsMax;
-                playerData.starsMax = Math.floor(playerData.starsMax * 1.2); // Tăng 20% yêu cầu
-                playerData.maxHp += 20;
-                playerData.hp = playerData.maxHp;
-                saveGame();
-            }
+            // Hiệu ứng chém
+            slashes.forEach((s, i) => { s.life--; if (s.life <= 0) slashes.splice(i, 1); });
         }
 
         function draw() {
-            // Xóa màn hình
-            if (playerData.inCity) {
-                ctx.fillStyle = '#5c7a55'; // Màu thành phố
-            } else {
-                ctx.fillStyle = '#3e2723'; // Màu đất hoang
-            }
+            ctx.fillStyle = '#4a7c59'; // Nền cỏ
             ctx.fillRect(0, 0, width, height);
 
-            // Vẽ map (Thành phố hoặc Bãi quái)
-            if (playerData.inCity) {
-                drawCity();
-            } else {
-                drawWilderness();
-            }
+            let camX = width/2 - player.x;
+            let camY = height/2 - player.y;
 
-            // Vẽ quái (chỉ vẽ khi ở ngoài thành phố)
-            if (!playerData.inCity) {
-                drawEntity(enemy.x, enemy.y, 25, enemy.color, enemy.name, enemy.hp, enemy.maxHp);
-            }
+            // Vẽ Cây
+            trees.forEach(t => {
+                ctx.fillStyle = '#654321'; ctx.beginPath(); ctx.arc(t.x + camX, t.y + camY, t.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#2E8B57'; ctx.beginPath(); ctx.arc(t.x + camX, t.y + camY - 10, t.radius + 5, 0, Math.PI*2); ctx.fill();
+            });
 
-            // Vẽ người chơi
-            drawEntity(playerData.x, playerData.y, 30, '#00ccff', playerData.name, playerData.hp, playerData.maxHp);
+            // Vẽ Đá
+            rocks.forEach(r => {
+                ctx.fillStyle = '#808080'; ctx.beginPath(); ctx.arc(r.x + camX, r.y + camY, r.radius, 0, Math.PI*2); ctx.fill();
+            });
 
-            // Vẽ hiệu ứng chém
-            if (isAttacking) {
-                ctx.beginPath();
-                let attackX = playerData.x + (facing.x * 50);
-                let attackY = playerData.y + (facing.y * 50);
-                ctx.arc(attackX, attackY, 40, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.fill();
-            }
+            // Vẽ Tường
+            walls.forEach(w => {
+                ctx.fillStyle = '#8B4513'; ctx.fillRect(w.x + camX - 25, w.y + camY - 25, 50, 50);
+                ctx.strokeStyle = '#000'; ctx.strokeRect(w.x + camX - 25, w.y + camY - 25, 50, 50);
+            });
+
+            // Vẽ Thú
+            animals.forEach(a => {
+                ctx.beginPath(); ctx.arc(a.x + camX, a.y + camY, a.radius, 0, Math.PI*2);
+                ctx.fillStyle = a.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke();
+                
+                if (a.tamed) {
+                    ctx.fillStyle = '#00ccff'; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+                    ctx.fillText(a.name, a.x + camX, a.y + camY - 20);
+                }
+            });
+
+            // Vẽ Người chơi
+            ctx.beginPath(); ctx.arc(player.x + camX, player.y + camY, 20, 0, Math.PI*2);
+            ctx.fillStyle = '#ffcc00'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+            
+            // Hướng nhìn
+            ctx.beginPath(); ctx.moveTo(player.x + camX, player.y + camY);
+            ctx.lineTo(player.x + camX + facing.x * 30, player.y + camY + facing.y * 30);
+            ctx.strokeStyle = 'red'; ctx.lineWidth = 4; ctx.stroke();
+
+            // Tên
+            ctx.fillStyle = 'white'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center';
+            ctx.fillText(player.name, player.x + camX, player.y + camY - 30);
+
+            // Hiệu ứng chém
+            slashes.forEach(s => {
+                ctx.beginPath(); ctx.arc(s.x + camX, s.y + camY, 30, 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fill();
+            });
         }
 
-        function drawEntity(x, y, radius, color, name, hp, maxHp) {
-            // Dịch chuyển tọa độ ra giữa màn hình
-            let screenX = width/2 + (x - playerData.x);
-            let screenY = height/2 + (y - playerData.y);
-
-            // Vẽ hình tròn (Trang phục)
-            ctx.beginPath();
-            ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-
-            // Vẽ hướng nhìn (mũi tên nhỏ)
-            if (name === playerData.name) {
-                ctx.beginPath();
-                ctx.moveTo(screenX, screenY);
-                ctx.lineTo(screenX + facing.x * 20, screenY + facing.y * 20);
-                ctx.strokeStyle = 'yellow';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-            }
-
-            // Vẽ Tên
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(name, screenX, screenY - radius - 20);
-
-            // Vẽ Thanh Máu
-            let barWidth = 60;
-            ctx.fillStyle = '#333';
-            ctx.fillRect(screenX - barWidth/2, screenY - radius - 15, barWidth, 6);
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(screenX - barWidth/2, screenY - radius - 15, barWidth * (hp/maxHp), 6);
-        }
-
-        function drawCity() {
-            // Vẽ các khu nhà (mô phỏng)
-            ctx.fillStyle = '#8b4513';
-            ctx.fillRect(width/2 - 200, height/2 - 150, 100, 80); // Tiệm rèn
-            ctx.fillStyle = 'white';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText("Tiệm Rèn", width/2 - 150, height/2 - 110);
-
-            ctx.fillStyle = '#4a148c';
-            ctx.fillRect(width/2 + 100, height/2 - 150, 100, 80); // Tiệm thuốc
-            ctx.fillStyle = 'white';
-            ctx.fillText("Tiệm Thuốc", width/2 + 150, height/2 - 110);
-
-            // Trung tâm hồi sinh
-            ctx.fillStyle = '#00bcd4';
-            ctx.beginPath();
-            ctx.arc(width/2, height/2, 60, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = 'black';
-            ctx.fillText("Hồi Sinh", width/2, height/2 + 5);
-        }
-
-        function drawWilderness() {
-            // Nút quay về thành (giả lập)
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(width/2 - 50, 10, 100, 30);
-            ctx.fillStyle = 'white';
-            ctx.fillText("Về Thành", width/2, 30);
-        }
-
-        // ==========================================
-        // 5. GIAO DIỆN (UI) & CỬA HÀNG
-        // ==========================================
         function updateUI() {
-            document.getElementById('ui-name').innerText = playerData.name;
-            document.getElementById('ui-lv').innerText = playerData.level;
-            document.getElementById('ui-hp-bar').style.width = (playerData.hp / playerData.maxHp * 100) + '%';
-            document.getElementById('ui-star').innerText = playerData.stars;
-            document.getElementById('ui-star-max').innerText = playerData.starsMax;
-            document.getElementById('ui-star-bar').style.width = (playerData.stars / playerData.starsMax * 100) + '%';
+            document.getElementById('ui-name').innerText = player.name;
+            document.getElementById('ui-lv').innerText = player.level;
+            document.getElementById('ui-hp-bar').style.width = (player.hp / player.maxHp * 100) + '%';
+            document.getElementById('ui-xp-bar').style.width = (player.xp / player.xpMax * 100) + '%';
+            document.getElementById('ui-wood').innerText = player.wood;
+            document.getElementById('ui-stone').innerText = player.stone;
+            document.getElementById('ui-gold').innerText = player.gold;
         }
-
-        function openShop(type) {
-            document.getElementById('modal-menu').style.display = 'flex';
-            let modalBody = document.getElementById('modal-body');
-            let title = document.getElementById('modal-title');
-            modalBody.innerHTML = '';
-
-            if (type === 'weapon') {
-                title.innerText = "Tiệm Vũ Khí";
-                let weapons = [
-                    { name: "Kiếm Gỗ", dmg: 10, price: 100 },
-                    { name: "Đoản Kiếm", dmg: 20, price: 300 },
-                    { name: "Trường Kiếm", dmg: 35, price: 800 },
-                    { name: "Giáo Sắt", dmg: 50, price: 1500 },
-                    { name: "Lưỡi Hái Tử Thần", dmg: 100, price: 5000 }
-                ];
-                weapons.forEach(w => {
-                    modalBody.innerHTML += `<div class="item-row"><span>${w.name} (Dmg: ${w.dmg})</span><button class="item-btn" onclick="buyItem('${w.name}', ${w.price})">${w.price} Vàng</button></div>`;
-                });
-            } 
-            else if (type === 'armor') {
-                title.innerText = "Tiệm Giáp";
-                let armors = [
-                    { name: "Giáp Gỗ", def: 5, price: 100 },
-                    { name: "Giáp Sắt", def: 15, price: 500 },
-                    { name: "Giáp Vàng", def: 30, price: 1500 },
-                    { name: "Giáp Kim Cương", priceKC: 50 },
-                    { name: "Giáp Rồng", priceKC: 200 }
-                ];
-                armors.forEach(a => {
-                    let priceText = a.price ? `${a.price} Vàng` : `${a.priceKC} KC`;
-                    let priceType = a.price ? a.price : a.priceKC;
-                    modalBody.innerHTML += `<div class="item-row"><span>${a.name}</span><button class="item-btn" onclick="buyItem('${a.name}', ${priceType})">${priceText}</button></div>`;
-                });
-            }
-            else if (type === 'potion') {
-                title.innerText = "Tiệm Thuốc";
-                modalBody.innerHTML += `<div class="item-row"><span>Bình Máu Nhỏ</span><button class="item-btn" onclick="buyItem('Máu', 50)">50 Vàng</button></div>`;
-                modalBody.innerHTML += `<div class="item-row"><span>Bình Sức Mạnh</span><button class="item-btn" onclick="buyItem('Sức Mạnh', 2)">2 Kim Cương</button></div>`;
-            }
-        }
-
-        function buyItem(itemName, price) {
-            if (price <= playerData.gold) { // Tạm dùng vàng
-                playerData.gold -= price;
-                alert(`Đã mua ${itemName}!`);
-                saveGame();
-                updateUI();
-            } else {
-                alert("Không đủ tiền!");
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('modal-menu').style.display = 'none';
-        }
-
-        // Khởi chạy load game
-        loadGame();
     </script>
 </body>
 </html>
